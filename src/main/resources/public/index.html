@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Porter Stemmer</title>
+    <style>
+        body {
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .wrapper {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px 40px;
+            box-shadow: 0 0 10px #aaa;
+        }
+
+        h1 {
+            font-size: 24px;
+        }
+
+        h2 {
+            font-size: 18px;
+        }
+
+        textarea {
+            width: 100%;
+            border: none;
+            /* box-shadow: 0 0 0 0.1px #aaa; */
+            border: 1px solid #ddd;
+            padding: 10px;
+            box-sizing: border-box;
+            font-size: 14px;
+            font-family: 'Source Code Pro', monospace;
+        }
+
+        small {
+            text-align: center;
+            display: block;
+            margin: 20px 0 0px;
+        }
+        input[type="text"] {
+            width: 70%;
+            font-size: 16px;
+            padding: 10px 20px;
+            box-sizing: border-box;
+        }
+
+        input[type="submit"] {
+            width: 20%;
+            padding: 10px 20px;
+            border: 1px solid sliver;
+        }
+
+        a {
+            color: #ff4411;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css?family=Roboto+Mono:500|Source+Code+Pro" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/autosize@4.0.2/dist/autosize.min.js"></script>
+</head>
+<body>
+    <div class="wrapper">
+        <h1>Search </h1>
+
+        <h2>Input:</h2>
+        <form id="form" action="/search" method="POST">
+            <input type="text" name="query" id="query" placeholder="provide search query" autocomplete="off" />
+            <input type="submit" value="Search" />
+        </form>
+
+        <h2>Output:</h2>
+        <div id="output"></div>
+    </div>
+
+
+    <script>
+        function openArticle(title, content, stemmed) {
+            var myWindow = window.open("", "MsgWindow", "width=400,height=600");
+            myWindow.document.write(`<h1>${title}</h1><p>${atob(content)}</p>`);
+            myWindow.document.write(`<h2>Stemmed:</h2><p>${atob(stemmed)}</p>`);
+        }
+
+        var form = document.getElementById("form");
+        var output = document.getElementById("output");
+        var text = document.getElementById("query");
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            output.innerHTML = "Loading..."
+
+            fetch(form.action, { method: form.method, body: "query=" + text.value })
+                .then(response => response.text())
+                .then(data => {
+                    output.innerHTML = JSON.parse(data).map(d => { return `
+                    <div class="result">
+                        <a href="#!" onclick="openArticle('${d.title}','${btoa(d.content)}','${btoa(d.stemmed)}')">${d.title}</a> <sup>(${d.value})</sup>
+                    </div>
+                    ` }).join('');
+
+                    var evt = document.createEvent('Event');
+                    evt.initEvent('autosize:update', true, false);
+                    output.dispatchEvent(evt);
+                });
+        });
+        autosize(document.querySelectorAll('textarea'));
+    </script>
+</body>
+</html>
