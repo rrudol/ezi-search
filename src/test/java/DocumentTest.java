@@ -27,11 +27,11 @@ class DocumentTest {
                 "Machine Learning Resources. Suggestions welcome. ... (WizRule); ZDM Scientific\n" +
                 "Ltd. Conference Announcements. Courses on Machine Learning. Data Repositories. ...\n" +
                 "Description: Comprehensive machine learning resources from Applications to Tutorials.");
-        assertEquals(document.getStemmedText(), ("david w aha  machin learn page\n" +
-                "machin learn resourc suggest welcom  wizrul zdm scientific\n" +
-                "ltd confer announc cours on machin learn data repositori \n" +
-                "descript comprehens machin learn resourc from applic to tutori "));
+        assertEquals(document.getStemmedText(), ("david w aha  machin learn page machin learn resourc suggest welcom  wizrul zdm scientif ltd confer announc cours on machin learn data repositori  descript comprehens machin learn resourc from applic to tutori"));
     }
+
+//    david w aha  machin learn pagemachin learn resourc suggest welcom  wizrul zdm scientificltd confer announc cours on machin learn data repositori descript comprehens machin learn resourc from applic to tutori
+
 
     @Test
     void bagOfWords() {
@@ -62,7 +62,8 @@ class DocumentTest {
                 "Ltd. Conference Announcements. Courses on Machine Learning. Data Repositories. ...\n" +
                 "Description: Comprehensive machine learning resources from Applications to Tutorials.");
         Keywords keywords = new Keywords("Machine\nLearn\nPage");
-        assertEquals(document.getTF(keywords).getOrDefault("machin", .0), (Double) .75);
+        assertEquals(document.getTF(keywords).getOrDefault("machin", .0), (Double) 1.);
         assertEquals(document.getTF(keywords).getOrDefault("learn", .0), (Double) 1.);
+        assertEquals(document.getTF(keywords).getOrDefault("page", .0), (Double) .25);
     }
 }

@@ -71,19 +71,6 @@ public class SearchTFIDF {
         return result;
     }
 
-    public HashMap<String, Double> getBagOfWords(String document, String[] keywordsArray) {
-        HashMap<String, Double> bagOfWords = new HashMap<>();
-        for (String word : document.split(" ")) {
-            if( Arrays.asList(keywordsArray).contains(word)) {
-                if(bagOfWords.getOrDefault(word, -1.0) == -1.0) {
-                    bagOfWords.put(word, 1.0);
-                }
-                bagOfWords.replace(word, bagOfWords.get(word)+1);
-            }
-        }
-        return bagOfWords;
-    }
-
     public Double getMaxWordCount(HashMap<String, Double> bagOfWords) {
         Double maxWordsCount = .0;
         for (Map.Entry<String, Double> stringIntegerEntry : bagOfWords.entrySet()) {
@@ -120,21 +107,24 @@ public class SearchTFIDF {
 
 //        System.out.println("query: " + query.getStemmedText());
         HashMap<String, Double> qTFIDF = query.getTFIDF(kw, kw.getIDF(DocumentsList));
+
         for(Document document : DocumentsList) {
             Double sum = .0;
             Double sum2 = .0;
             Double sum3 = .0;
 
             HashMap<String, Double> documentTFIDF = document.getTFIDF(kw, kw.getIDF(DocumentsList));
-            for (String keyword : query.getStemmedText().split(" ")) {
+            //for (String keyword : query.getStemmedText().split(" ")) {
+            for (String keyword : kw.getStemmedList()) {
                 Double a = qTFIDF.getOrDefault(keyword, .0);
                 Double b = documentTFIDF.getOrDefault(keyword, .0);
                 sum += a * b;
-                sum2 += Math.pow(a,2);
-                sum3 += Math.pow(a,2);
+                sum2 += a*a;
+                sum3 += b*b;
+
             }
-            ranking.add(new Pair<>(sum / Math.sqrt(sum2) / Math.sqrt(sum3), document));
-//            System.out.println(sum + " / " + Math.sqrt(sum2) + " / " + Math.sqrt(sum3) +" = " + sum / Math.sqrt(sum2) / Math.sqrt(sum3));
+            ranking.add(new Pair<>(sum / (Math.sqrt(sum2) * Math.sqrt(sum3)), document));
+            System.out.println(sum + " / " + Math.sqrt(sum2) + " / " + Math.sqrt(sum3) +" = " + sum / (Math.sqrt(sum2) * Math.sqrt(sum3)));
         }
 
         try {

@@ -44,8 +44,11 @@ public class Keywords {
         HashMap<String, Double> IDF = new HashMap<>();
         for (String keyWord : getStemmedList()) {
             Integer c = containgDocumentsCount( documents, keyWord);
-            IDF.put(keyWord, c != 0 ? Math.log( documents.size() / c) : 0 );
+            Double a = new Double(documents.size());
+            Double b = new Double(c);
+            IDF.put(keyWord, c != 0 ? Math.log10( a/b ) : 0 );
         }
+        System.out.println(IDF);
         return IDF;
     }
 

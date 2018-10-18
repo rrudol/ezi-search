@@ -27,7 +27,7 @@ public class Document {
     }
 
     public String getStemmedText() {
-        String text = getText().toLowerCase().replaceAll("[^a-zA-Z ]", "");
+        String text = getText().toLowerCase().replaceAll("[^a-zA-Z \n]", "").replace("\n", " ");
         String newText = "";
         for (String word : text.split(" ")) {
             Stemmer stemmer = new Stemmer();
@@ -88,6 +88,8 @@ public class Document {
         if(CACHING && TFIDF == null) {
             TFIDF = calculateTFIDF(keywords, IDF);
         }
+        System.out.println("TFIDF");
+        System.out.println(TFIDF);
         return TFIDF;
     }
 }
