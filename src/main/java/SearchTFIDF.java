@@ -4,8 +4,6 @@ import java.io.*;
 import java.util.*;
 import org.json.*;
 
-import javax.print.Doc;
-
 public class SearchTFIDF {
     ArrayList<Document> DocumentsList;
     Keywords kw;
@@ -101,7 +99,7 @@ public class SearchTFIDF {
         System.out.println("============== READY ==============");
     }
 
-    public String search(String Q) {
+    public String search(String Q, Boolean suggestion) {
         Document query = new Document(Q + "\n");
         ArrayList<Pair<Double, Document>> ranking = new ArrayList<>();
 
@@ -138,6 +136,7 @@ public class SearchTFIDF {
 //            System.out.println("UPS");
         }
 
+        JSONObject res = new JSONObject();
         JSONArray result = new JSONArray();
         for (Pair<Double, Document> doubleStringPair : ranking) {
             try {
@@ -147,6 +146,9 @@ public class SearchTFIDF {
                 obj.put("value", doubleStringPair.getKey());
                 obj.put("content", document.getContent());
                 obj.put("stemmed", document.getStemmedText());
+
+
+
                 if(doubleStringPair.getKey() > 0 ) {
                     result.put(obj);
                 }
@@ -154,7 +156,68 @@ public class SearchTFIDF {
 //                System.out.println("ERROR");
             }
         }
+        res.put("results", result);
 
-        return result.toString();
+        Double alpha = 1.00;
+        Double beta  = 0.75;
+        Double gamma = 0.25;
+
+        ArrayList<Pair<Double, JSONObject>> suggestionsList = new ArrayList<>();
+        if(suggestion) {
+            HashMap<String, Double> bagOfWordsOfQuery = query.getBagOfWords(kw);
+            ArrayList<HashMap<String, Double>> listOfBestDocumentsBagOfWords = new ArrayList<>();
+            ArrayList<HashMap<String, Double>> listOfWorstDocumentsBagOfWords = new ArrayList<>();
+            for (int i = 0; i < 5; i++) {
+                listOfBestDocumentsBagOfWords.add(ranking.get(i).getValue().getBagOfWords(kw));
+            }
+
+            for (int i = 0; i < 5; i++) {
+                listOfWorstDocumentsBagOfWords.add(ranking.get(ranking.size()-i-1).getValue().getBagOfWords(kw));
+            }
+
+            List<String> stemmedList = kw.getStemmedList();
+            for (int i = 0; i < stemmedList.size(); i++) {
+                String keyword = stemmedList.get(i);
+                String originalKeyword = kw.getList().get(i);
+                if(query.getStemmedText().contains(keyword)) continue;
+                int sumOfBestDocumentsBagOfWordsValues = 0;
+                int sumOfWorstDocumentsBagOfWordsValues = 0;
+                for (HashMap<String, Double> bestDocumentBagOfWord : listOfBestDocumentsBagOfWords) {
+                    sumOfBestDocumentsBagOfWordsValues += bestDocumentBagOfWord.getOrDefault(keyword, .0);
+                    //System.out.println(sumOfBestDocumentsBagOfWordsValues);
+                }
+                for (HashMap<String, Double> worstDocumentBagOfWord : listOfWorstDocumentsBagOfWords) {
+                    sumOfWorstDocumentsBagOfWordsValues += worstDocumentBagOfWord.getOrDefault(keyword, .0);
+
+                }
+                System.out.println(alpha);
+                Double value = bagOfWordsOfQuery.getOrDefault(keyword, .0) * alpha + (1./5.) * beta * sumOfBestDocumentsBagOfWordsValues - (1./5.) * gamma * sumOfWorstDocumentsBagOfWordsValues;
+                System.out.println(new Pair<>(value, keyword));
+                JSONObject sugestion = new JSONObject();
+                sugestion.put("value", query.getText() + ' ' + originalKeyword);
+                sugestion.put("q", value);
+                suggestionsList.add(new Pair<>(value, sugestion));
+            }
+        }
+
+        try {
+            Collections.sort(suggestionsList, new Comparator<Pair<Double, JSONObject>>() {
+                @Override
+                public int compare(final Pair<Double, JSONObject> o1, final Pair<Double, JSONObject> o2) {
+                    return (o1.getKey() - o2.getKey()) < 0 ? 1 : -1;
+                }
+            });
+        } catch (IllegalArgumentException e) {
+//            System.out.println("UPS");
+        }
+
+        JSONArray suggestionsArrayJSON = new JSONArray();
+
+        for (int i = 0; i < Math.min(suggestionsList.size(), 5); i++) {
+            suggestionsArrayJSON.put(suggestionsList.get(i).getValue());
+        }
+        res.put("suggestions", suggestionsArrayJSON);
+
+        return res.toString();
     }
 }

@@ -1,3 +1,5 @@
+import javafx.util.Pair;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -14,6 +16,15 @@ public class Keywords {
         return list;
     }
     private boolean CACHEING = true;
+
+    public HashMap<String, String> getHashMap() {
+        HashMap<String, String> res = new HashMap<>();
+        List<String> stemmedList = getStemmedList();
+        for (int i = 0; i < stemmedList.size(); i++) {
+            res.put(stemmedList.get(i), list.get(i));
+        }
+        return res;
+    }
 
     public List<String> getStemmedList() {
         String text = "";

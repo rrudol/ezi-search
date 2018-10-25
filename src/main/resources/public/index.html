@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Porter Stemmer</title>
+    <title>Search</title>
     <style>
         body {
             font-family: 'Roboto Mono', monospace;
@@ -47,9 +47,18 @@
         }
 
         input[type="submit"] {
-            width: 20%;
-            padding: 10px 20px;
-            border: 1px solid sliver;
+            padding: 8px 20px 9px;
+            border: 1px solid #ddd;
+            vertical-align: top;
+            font-size: 14px;
+            box-sizing: border-box;
+            color: #444;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        input[type="submit"]:hover {
+            border-color: #0088ff;
         }
 
         a {
@@ -66,11 +75,27 @@
         <h2>Input:</h2>
         <form id="form" action="/search" method="POST">
             <input type="text" name="query" id="query" placeholder="provide search query" autocomplete="off" />
-            <input type="submit" value="Search" />
+            <input type="submit" value="🔎 Search" id="submit" />
+            <br />
+            <input type="checkbox" checked name="extend" id="extend" />
+            <label for="extend">Query extending</label>
         </form>
 
-        <h2>Output:</h2>
-        <div id="output"></div>
+        <section class="suggestions" style="display: none;">
+            <h2>Suggestions:</h2>
+            Do you mean?
+            <div id="suggestions">
+                <a href="#" data-query="machine">Machine</a>
+                <a href="#" data-query="computer">Computers</a>
+                <a href="#" data-query="learning">Learning</a>
+                <a href="#" data-query="machine learning">Machine Learning</a>
+                <a href="#" data-query="computer science">Computer Science</a>
+            </div>
+        </section>
+        <section class="output" style="display: none;">
+            <h2>Output:</h2>
+            <div id="output"></div>
+        </section>
     </div>
 
 
@@ -84,19 +109,49 @@
         var form = document.getElementById("form");
         var output = document.getElementById("output");
         var text = document.getElementById("query");
+        var extend = document.getElementById("extend");
+        var suggestions = document.getElementById("suggestions");
+        var submit = document.getElementById("submit");
+
+        suggestions.addEventListener('click', function(e){
+            e.preventDefault();
+            text.value = e.target.dataset.query;
+            submit.click();
+            return false;
+        });
+
         form.addEventListener('submit', function(e) {
             e.preventDefault();
 
             output.innerHTML = "Loading..."
+            document.querySelector('.suggestions').style.display = 'none';
+            suggestions.innerHTML = "";
 
-            fetch(form.action, { method: form.method, body: "query=" + text.value })
+            fetch(form.action + (extend.checked ? "-extended" : ""), { method: form.method, body: "query=" + text.value })
                 .then(response => response.text())
                 .then(data => {
-                    output.innerHTML = JSON.parse(data).map(d => { return `
-                    <div class="result">
-                        <a href="#!" onclick="openArticle('${d.title}','${btoa(d.content)}','${btoa(d.stemmed)}')">${d.title}</a> <sup>(${d.value})</sup>
-                    </div>
-                    ` }).join('');
+                    document.querySelector('.output').style.display = 'block';
+                    if(JSON.parse(data).results && JSON.parse(data).results[0]) {
+                        output.innerHTML = JSON.parse(data).results.map(d => { return `
+                        <div class="result">
+                            <a href="#!" onclick="openArticle('${d.title}','${btoa(d.content)}','${btoa(d.stemmed)}')">${d.title}</a> <sup>(${d.value})</sup>
+                        </div>
+                        ` }).join('');
+
+
+                        if(JSON.parse(data).suggestions && extend.checked) {
+                            suggestions.innerHTML = JSON.parse(data).suggestions.map(s => {
+                                return `<a href="#" data-query="${s.value}">${s.value}</a> <sup>${s.q}</sup>`;
+                            }).join(',<br />');
+
+                            document.querySelector('.suggestions').style.display = 'block';
+                        }
+
+
+                    } else {
+                        output.innerHTML = "Sorry, no results found 😔"
+                    }
+
 
                     var evt = document.createEvent('Event');
                     evt.initEvent('autosize:update', true, false);

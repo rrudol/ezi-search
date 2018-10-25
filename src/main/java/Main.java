@@ -1,4 +1,6 @@
 import javafx.util.Pair;
+import net.sf.extjwnl.JWNLException;
+import net.sf.extjwnl.dictionary.Dictionary;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -12,7 +14,19 @@ import static spark.Spark.*;
 
 public class Main {
 
+    public static void word() {
+        Dictionary dictionary = null;
+        try {
+            dictionary = Dictionary.getDefaultResourceInstance();
+        } catch (JWNLException e) {
+            e.printStackTrace();
+        }
+//        dictionary.
+    }
+
     public static void main(String[] args) {
+        word();
+
         if (true) {
             String projectDir = System.getProperty("user.dir");
             String staticDir = "/src/main/resources/public";
@@ -28,7 +42,17 @@ public class Main {
                 String[] keyValue = field.split("=");
                 Data.put(keyValue[0], keyValue[1]);
             }
-            return searchTfIdf.search(Data.getOrDefault("query", ""));
+            return searchTfIdf.search(Data.getOrDefault("query", ""), false);
+        });
+
+        post("/search-extended", (request, response) -> {
+            HashMap<String, String> Data = new HashMap<String, String>();
+            String[] fields = request.body().split("&");
+            for (String field : fields) {
+                String[] keyValue = field.split("=");
+                Data.put(keyValue[0], keyValue[1]);
+            }
+            return searchTfIdf.search(Data.getOrDefault("query", ""), true);
         });
     }
 }
